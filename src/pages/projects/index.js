@@ -26,6 +26,7 @@ import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 
 import Router from 'next/router.js';
+import CreateProjectForm from './create.js'
 
 import { io } from "socket.io-client";
 
@@ -36,6 +37,7 @@ import Button from '@mui/material/Button';
 
 import {GET_ALL_PROJECTS} from '../../routes/auth.js';
 import {PROJECTS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
+import { Grid } from '@mui/material';
 
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
@@ -218,7 +220,7 @@ export default function EnhancedTable({token}) {
   const [rows, setRows] = useState([]);
   
   const getAllProjects = async(token) => {
-    console.log(token);
+    // console.log(token);
     const options = {
       method: "GET",
       headers: {
@@ -230,33 +232,37 @@ export default function EnhancedTable({token}) {
     try {
       setError('');
       setSuccess('');
-      console.log(GET_ALL_PROJECTS);
       const response = await fetch(GET_ALL_PROJECTS, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
       const validationErrors = responseJson.errors
-      console.log(status, data);
+
+      if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
+        Router.push('/login');
+        localStorage.removeItem('token');
+      }
+
       if (status){
         setSuccess(PROJECTS_FETCHED_SUCCESS_MESSAGE);
         setRows([...data.project]);
       }
       else{
         setRows([]);
-        let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
         if(validationErrors){
+          let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
           var errorMessage = '';
-            validationErrorsArray.forEach(error => {
-              errorMessage += error + ', ';
-            });
-            setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
-          }
+          validationErrorsArray.forEach(error => {
+            errorMessage += error + ', ';
+          });
+          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+        }
         else{
           setError(responseJson.error.message);
         }
       }
     } catch (error) {
       setError(error.message);
-      console.log(error.message);
+      // console.log(error.message);
     }
     
   }
@@ -303,7 +309,6 @@ export default function EnhancedTable({token}) {
         selected.slice(selectedIndex + 1),
       );
     }
-
     setSelected(newSelected);
   };
 
@@ -316,9 +321,9 @@ export default function EnhancedTable({token}) {
     setPage(0);
   };
 
-  const handleChangeDense = (event) => {
-    setDense(event.target.checked);
-  };
+  const addMoreProject = (project) => {
+    setRows([...rows, project]);
+  }
 
   const isSelected = (name) => selected.indexOf(name) !== -1;
 
@@ -338,9 +343,16 @@ export default function EnhancedTable({token}) {
             </Breadcrumbs>
           </div>
       </Box>
+      
+      <Box sx={{flexGrow: 1, marginLeft: "auto" }} mt={4} mb={4} >
+        <CreateProjectForm addProject={addMoreProject}/>
+      </Box>
+      
       {error && <Alert severity="error">{error}</Alert>}
       {success && <Alert severity="success">{success}</Alert>}
-      <Divider />
+      <Divider mt={2} mb={2} />
+
+      
       <Box sx={{ width: '100%' }}>
         <Paper sx={{ width: '100%', mb: 2 }}>
           <EnhancedTableToolbar numSelected={selected.length} />

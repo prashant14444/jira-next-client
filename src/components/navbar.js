@@ -86,7 +86,7 @@ export default function Navbar({ children, token }) {
 
   useEffect(() => {
     if(!localStorage.getItem('token'))
-      Router.replace('/login')
+      Router.push('/login')
   })
 
   return (
