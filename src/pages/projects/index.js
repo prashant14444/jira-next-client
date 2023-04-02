@@ -238,8 +238,8 @@ export default function EnhancedTable({token}) {
       const validationErrors = responseJson.errors
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
-        Router.push('/login');
         localStorage.removeItem('token');
+        Router.push('/login');
       }
 
       if (status){

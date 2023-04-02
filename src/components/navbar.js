@@ -144,13 +144,13 @@ export default function Navbar({ children, token }) {
         </DrawerHeader>
         <Divider />
         <List>
-          {['Projects', 'Board', 'Backlog', 'Users'].map((text, index) => (
+          {['Projects', 'Board', 'Backlog', 'Users', 'Project Members'].map((text, index) => (
             <ListItem key={text} disablePadding>
               <ListItemButton>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
-                <ListItemText primary={text} onClick={() => Router.push(`${text.toLowerCase()}`)}/>
+                <ListItemText primary={text} onClick={() => Router.push(`${text.toLowerCase().replace(' ', '-')}`)}/>
               </ListItemButton>
             </ListItem>
           ))}
@@ -163,7 +163,7 @@ export default function Navbar({ children, token }) {
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
-                <ListItemText primary={text} onClick={() => Router.push(`${text.toLowerCase()}`)} />
+                <ListItemText primary={text} onClick={() => Router.push(`${text.toLowerCase().replace(' ', '-')}`)} />
               </ListItemButton>
             </ListItem>
           ))}

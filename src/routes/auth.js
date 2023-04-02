@@ -5,3 +5,7 @@ export const REGISTER_USER_ROUTE = `${API_HOST_WITH_VERSION}/user`;
 
 export const GET_ALL_PROJECTS = `${API_HOST_WITH_VERSION}/project`;
 export const CREATE_NEW_PROJECT = `${API_HOST_WITH_VERSION}/project`;
+
+export const CREATE_NEW_USER = `${API_HOST_WITH_VERSION}/user`;
+export const GET_ALL_USERS = `${API_HOST_WITH_VERSION}/user`;
+export const DELETE_USER_BY_ID = `${API_HOST_WITH_VERSION}/user/:id`;

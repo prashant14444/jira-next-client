@@ -122,13 +122,13 @@ export default function CreateProjectForm({addProject}) {
     <div>
       <Button variant="outlined" onClick={handleClickOpen}>+ Add</Button>
       <Dialog open={open} onClose={handleClose}>
-        {error && <Alert severity="error">{error}</Alert>}
-        {success && <Alert severity="success">{success}</Alert>}
         <DialogTitle>Create New Project</DialogTitle>
         <DialogContent>
             <DialogContentText></DialogContentText>
             <Divider />
 
+            {error && <Alert severity="error">{error}</Alert>}
+            {success && <Alert severity="success">{success}</Alert>}
             <TextField
                 autoFocus
                 margin="dense"
