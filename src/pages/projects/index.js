@@ -406,7 +406,7 @@ export default function EnhancedTable({token}) {
                           {row.name}
                         </TableCell>
                         <TableCell align="right">{row.description}</TableCell>
-                        <TableCell align="right">{row.created_by.f_name}</TableCell>
+                        <TableCell align="right">{row.created_by && row.created_by.f_name}</TableCell>
                         <TableCell align="right">
                          
                             <Button variant="outlined" projectid={row.id} startIcon={<DeleteIcon />} sx={{marginRight: "30px"}} color="primary">Edit</Button>
