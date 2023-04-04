@@ -8,3 +8,5 @@ export const PROJECT_CREATED_SUCCESS_MESSAGE = "Project created successfully";
 export const PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE = "Project Members rendered successfully";
 export const PROJECT_MEMBER_CREATED_SUCCESS_MESSAGE = "Project Member created successfully";
 export const PROJECT_MEMBER_DELETED_SUCCESS_MESSAGE = "Project Member deleted successfully!";
+
+export const TASKS_FETCHED_SUCCESS_MESSAGE = "Tasks rendered successfully";

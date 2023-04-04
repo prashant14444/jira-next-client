@@ -16,3 +16,5 @@ export const DELETE_PROJECT_MEMBER_BY_ID = `${API_HOST_WITH_VERSION}/project-mem
 export const UPDATE_PROJECT_MEMBER_BY_ID = `${API_HOST_WITH_VERSION}/project-member/:id`;
 
 export const CREATE_PROJECT_MEMBER = `${API_HOST_WITH_VERSION}/project-member`;
+
+export const GET_ALL_TASKS = `${API_HOST_WITH_VERSION}/task?project_id={projectId}`;
