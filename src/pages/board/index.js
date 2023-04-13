@@ -9,18 +9,18 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import CreateTaskForm from './task-create.js';
 import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import Router from 'next/router.js';
+import dynamic from "next/dynamic";
+import { DragDropContext } from 'react-beautiful-dnd';
 
-import { GET_ALL_PROJECTS, GET_ALL_TASKS } from '../../routes/auth.js';
-import { PROJECTS_FETCHED_SUCCESS_MESSAGE, TASKS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
+import { GET_ALL_PROJECTS, GET_ALL_TASKS, UPDATE_TASK_STATUS } from '../../routes/auth.js';
+import { PROJECTS_FETCHED_SUCCESS_MESSAGE, TASKS_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE } from '../../messages/message.js';
 import { Divider } from '@mui/material';
+
+
+
+const Column = dynamic(() => import("./column.js"), { ssr: false });
 
 export default function Board({token}) {
   const [selectedProjectId, setSelectedProjectId] = useState('');
@@ -29,6 +29,7 @@ export default function Board({token}) {
   const [projects, setProjects] = useState([]);
   const [spacing, setSpacing] = useState(4);
   const [tasks, setTasks] = useState([]);
+  const [state, setState] = useState([]);
 
   const handleProjectChange = (event) => {
     const projectId = event.target.value;
@@ -129,6 +130,77 @@ export default function Board({token}) {
     }
   }
 
+  const updateTaskStatus = async(taskId, status) => {
+    let token = localStorage.getItem('token');
+    const options = {
+       method: "PUT",
+      //  url: UPDATE_TASK_STATUS.replace('{taskId}', taskId).replace('{projectId}', selectedProjectId),
+       body: JSON.stringify({status}),
+       headers: {
+         "Content-Type": "application/json",
+         "x-access-token": token
+       },
+    }
+     
+    try {
+      setError('');
+      setSuccess('');
+      const response = await fetch(UPDATE_TASK_STATUS.replace('{taskId}', taskId).replace('{projectId}', selectedProjectId), options);
+      let responseJson = await response.json()
+      const {status, data} = responseJson;
+      const validationErrors = responseJson.errors
+
+      if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
+        Router.push('/login');
+        localStorage.removeItem('token');
+      }
+
+      if (status){
+          setSuccess(TASK_UPDATED_SUCCESS_MESSAGE);
+          let reorderedTask = tasks.filter((task) => task.id != taskId);
+          setTasks([...reorderedTask, data.task]);
+      }
+      else{
+        // setRows([]);
+        if(validationErrors){
+          let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
+          var errorMessage = '';
+          validationErrorsArray.forEach(error => {
+            errorMessage += error + ', ';
+          });
+          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+        }
+        else{
+          setError(responseJson.error.message);
+        }
+      }
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const reorderColumnList = (taskId, source, destination) => {
+    updateTaskStatus(taskId, destination.droppableId);
+  };
+
+  const onDragEnd = (result) => {
+    const { destination, source } = result;
+
+    // If user tries to drop in an unknown destination
+    if (!destination) return;
+
+    // if the user drags and drops back in the same position
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const taskId = result.draggableId; // the id of the task that has been dragged
+
+    reorderColumnList( taskId, source, destination);
+  };
   const addMoreTask = (task) => {
     console.log("task", task);
   };
@@ -185,109 +257,17 @@ export default function Board({token}) {
       {success && <Alert severity="success">{success}</Alert>}
       <Divider mt={4}/>
 
-      <Grid sx={{ flexGrow: 1 }} container spacing={2} mt={2}>
+    <Grid sx={{ flexGrow: 1 }} container spacing={2} mt={2}>
       <Grid item xl={12}>
-        <Grid container justifyContent="center" spacing={spacing}>
-          {["todo", "in-progress", "qa", "done"].map((value) => (
-            <Grid key={value} item>
-              <InputLabel sx={{marginBottom: "10px", color: "primary.main"}}>{value.toUpperCase()}</InputLabel>
-              <Paper
-                sx={{
-                  minHeight: "40vh",
-                  maxHeight: "auto",
-                  width: "35vh",
-                  borderRadius: 1,
-                  border: 1,
-                  borderColor: 'primary.main',
-                  backgroundColor: "#F4F1F0"
-                }}
-              >
-                {tasks.map((task) => {
-                  if(task.status != value)
-                    return <></>;
-
-                  switch (task.status) {
-                    case 'todo':
-                      return (
-                        <Card sx={{ maxWidth: 345, margin:"10px", maxHeight: 300 }}>
-                          <CardMedia
-                            sx={{ height: 100 }}
-                            image={"/static/images/cards/contemplative-reptile.jpg"}
-                            title="green iguana"
-                            />
-                          <CardContent>
-                            <Typography variant="body2" color="text.secondary">{task.title}</Typography>
-                          </CardContent>
-                          <CardActions>
-                            <CheckBoxIcon />
-                            <Button size="small">Share</Button>
-                            <Button size="small">Learn More</Button>
-                          </CardActions>
-                        </Card>
-                      );
-                    case 'in-progress':
-                      return (
-                        <Card sx={{ maxWidth: 345, margin:"10px", maxHeight: 300 }}>
-                          <CardMedia
-                            sx={{ height: 100 }}
-                            image={"/static/images/cards/contemplative-reptile.jpg"}
-                            title="green iguana"
-                            />
-                          <CardContent>
-                            <Typography variant="body2" color="text.secondary">{task.title}</Typography>
-                          </CardContent>
-                          <CardActions>
-                            <CheckBoxIcon />
-                            <Button size="small">Share</Button>
-                            <Button size="small">Learn More</Button>
-                          </CardActions>
-                        </Card>
-                      );
-                    case 'qa':
-                      return (
-                        <Card sx={{ maxWidth: 345, margin:"10px", maxHeight: 300 }}>
-                          <CardMedia
-                            sx={{ height: 100 }}
-                            image={"/static/images/cards/contemplative-reptile.jpg"}
-                            title="green iguana"
-                            />
-                          <CardContent>
-                            <Typography variant="body2" color="text.secondary">{task.title}</Typography>
-                          </CardContent>
-                          <CardActions>
-                            <CheckBoxIcon />
-                            <Button size="small">Share</Button>
-                            <Button size="small">Learn More</Button>
-                          </CardActions>
-                        </Card>
-                      );
-                    case 'done':
-                      return (
-                        <Card sx={{ maxWidth: 345, margin:"10px", maxHeight: 300 }}>
-                          <CardMedia
-                            sx={{ height: 100 }}
-                            image={"/static/images/cards/contemplative-reptile.jpg"}
-                            title="green iguana"
-                            />
-                          <CardContent>
-                            <Typography variant="body2" color="text.secondary">{task.title}</Typography>
-                          </CardContent>
-                          <CardActions>
-                            <CheckBoxIcon />
-                            <Button size="small">Share</Button>
-                            <Button size="small">Learn More</Button>
-                          </CardActions>
-                        </Card>
-                      );
-
-                    default:
-                      return<></>;
-                  }
-                })}
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Grid container justifyContent="center" spacing={spacing}>
+            {["todo", "in-progress", "qa", "done"].map((value) =>{
+              const column = value;
+              let columnTasks = tasks.filter(task => task.status == column);
+              return <Column value={value} key={column} column={column} tasks={columnTasks} />;
+            } )}
+          </Grid>
+        </DragDropContext>
       </Grid>
       
     </Grid>
