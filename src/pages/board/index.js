@@ -202,7 +202,8 @@ export default function Board({token}) {
     reorderColumnList( taskId, source, destination);
   };
   const addMoreTask = (task) => {
-    console.log("task", task);
+    if(selectedProjectId == task.id)
+      setTasks([...tasks, task]);
   };
 
   const handleChange = (event) => {

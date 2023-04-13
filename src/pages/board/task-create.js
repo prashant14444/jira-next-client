@@ -17,40 +17,46 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Router from 'next/router.js';
+import TextField from '@mui/material/TextField';
+import Editor from "../../components/Editor.js";
 
-import {CREATE_PROJECT_MEMBER, GET_ALL_USERS, GET_ALL_PROJECTS} from '../../routes/auth.js';
-import {PROJECT_MEMBER_CREATED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
-import {PROJECT_MEMBERS_DESIGNATIONS} from '../../constants/project_member_designations.js';
+import {CREATE_TASK, GET_ALL_USERS, GET_ALL_PROJECTS} from '../../routes/auth.js';
+import {TASK_CREATED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
+import { TASK_STATUSES, TASK_TYPES, TASK_PRIORITY  } from '../../constants/task.js';
 
-export default function CreateTaskForm({addMember}) {
+export default function CreateTaskForm({addTask}) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [projectId, setProjectId] = useState('');
-  const [projectMember, setProjectMember] = useState('');
-  const [designation, setDesignation] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [taskPriority, setTaskPriority] = useState('');
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskStatus, setTaskStatus] = useState('');
+  const [taskType, setTaskType] = useState('');
+  const [description, setDescription] = useState('');
 
   const handleChange = (e) => {
-    console.log(e.target.name)
     switch(e.target.name){
       case 'project_id':
         setProjectId(e.target.value);
         break;
     
-      case 'project_member_id':
-        setProjectMember(e.target.value);
+      case 'status':
+        setTaskStatus(e.target.value);
         break;
 
-      case 'confirm_password':
-        setConfirmPassword(e.target.value);
+      case 'taskTitle':
+        setTaskTitle(e.target.value);
         break;
 
-      case 'designation':
-        console.log(e.target.value)
-        setDesignation(e.target.value);
+      case 'priority':
+        setTaskPriority(e.target.value);
+        break;
+
+      case 'type':
+        setTaskType(e.target.value);
         break;
 
       default:
@@ -68,17 +74,27 @@ export default function CreateTaskForm({addMember}) {
     setSuccess('');
     setError('');
     setProjectId('');
-    setProjectMember('');
+    setTaskStatus('');
+    setTaskPriority('');
+    setTaskTitle('');
     setProjects([]);
-    setUsers([]);
-    setDesignation('');
+    setTaskType('');
   };
 
   const handleSubmit = async(e) => {
     setLoading(true);
+    let data = {
+      project_id:projectId, 
+      title: taskTitle, 
+      description, 
+      priority: taskPriority, 
+      type: taskType, 
+      status: taskStatus
+    };
+
     const options = {
       method: "POST",
-      body: JSON.stringify({project_id:projectId, user_id: projectMember, designation}),
+      body: JSON.stringify(data),
       headers: {
         "Content-Type": "application/json",
         "x-access-token": localStorage.getItem('token')
@@ -89,13 +105,13 @@ export default function CreateTaskForm({addMember}) {
       setError('');
       setSuccess('');
 
-      const response = await fetch(CREATE_PROJECT_MEMBER, options);
+      const response = await fetch(CREATE_TASK, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
       const validationErrors = responseJson.errors
       if (status){
-        setSuccess(PROJECT_MEMBER_CREATED_SUCCESS_MESSAGE);
-        addMember(data.projectMember);
+        setSuccess(TASK_CREATED_SUCCESS_MESSAGE);
+        addTask(data.task);
         handleClose();
       }
       else{
@@ -190,10 +206,10 @@ export default function CreateTaskForm({addMember}) {
 
       if (status){
         setSuccess(USERS_FETCHED_SUCCESS_MESSAGE);
-        setUsers([...data.user]);
+        // setTask([...data.user]);
       }
       else{
-        setUsers([]);
+        // setTask([]);
         if(validationErrors){
           let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
           var errorMessage = '';
@@ -215,12 +231,12 @@ export default function CreateTaskForm({addMember}) {
   return (
     <>
       <Button variant="outlined" onClick={handleClickOpen}>+ Add</Button>
-      <Dialog open={open} onClose={handleClose}>
+      <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth="true">
         <DialogTitle>Create New User</DialogTitle>
         <DialogContent>
             <DialogContentText></DialogContentText>
             <Divider />
-            <Stack sx={{width:"55vh"}}>
+            <Stack>
             {error && <Alert severity="error">{error}</Alert>}
             {success && <Alert severity="success">{success}</Alert>}
 
@@ -242,43 +258,69 @@ export default function CreateTaskForm({addMember}) {
               
               </Select>
               </FormControl>
-              
-            <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
-              <InputLabel id="project-member">Project Member</InputLabel>
-              <Select
-              required
-              labelId="project-member"
-              id="project-member"
-              name="project_member_id"
-              value={projectMember}
-              onChange={handleChange}
-              label="Project Member *"
-              >
-              
-              {users.map((user) => {
-                return <MenuItem key={user.id} value={user.id}>{user.f_name} {user.l_name}</MenuItem>
-              })}
-              </Select>
-            </FormControl>
 
             <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
-              <InputLabel id="designation">Designation</InputLabel>
+              <InputLabel id="task-status">Task Status</InputLabel>
               <Select
               required
-              labelId="designation"
-              id="user-designation"
-              name="designation"
-              value={designation}
+              labelId="task-status"
+              id="task-status"
+              name="status"
+              value={taskStatus}
               onChange={handleChange}
-              label="Designation *"
+              label="Task Status *"
               >
               <MenuItem value=""><em>None</em></MenuItem>
-              {PROJECT_MEMBERS_DESIGNATIONS.map((designation) => {
-                return <MenuItem key={designation.value} value={designation.value}>{designation.name}</MenuItem>
+              {TASK_STATUSES.map((status) => {
+                return <MenuItem key={status.value} value={status.value}>{status.name}</MenuItem>
               })}
               </Select>
             </FormControl>
 
+            <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
+              <InputLabel id="task-type">Task Type</InputLabel>
+              <Select
+              required
+              labelId="task-type"
+              id="task-type"
+              name="type"
+              value={taskType}
+              onChange={handleChange}
+              label="Task Type *"
+              >
+              <MenuItem value=""><em>None</em></MenuItem>
+              {TASK_TYPES.map((taskType) => {
+                return <MenuItem key={taskType} value={taskType}>{taskType.toUpperCase()}</MenuItem>
+              })}
+              </Select>
+            </FormControl>
+
+            <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
+              <TextField defaultValue={taskTitle} name="taskTitle" label="Title" variant="standard" onChange={handleChange} />
+            </FormControl>
+
+            <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
+              <InputLabel id="priority">Priority</InputLabel>
+              <Select
+              required
+              labelId="priority"
+              id="user-priority"
+              name="priority"
+              value={taskPriority}
+              onChange={handleChange}
+              label="Priority *"
+              >
+              <MenuItem value=""><em>None</em></MenuItem>
+              {TASK_PRIORITY.map((priority) => {
+                return <MenuItem key={priority.value} value={priority.value}>{priority.name}</MenuItem>
+              })}
+              </Select>
+            </FormControl>
+
+            <FormControl variant="standard" sx={{ minWidth: 0, mt:4 }}>
+              <Editor value={description} onChange={setDescription} />
+            </FormControl>
+          
           </Stack>
         </DialogContent>
         <DialogActions>
