@@ -13,9 +13,12 @@ import Alert from '@mui/material/Alert';
 import Router from 'next/router.js';
 import dynamic from "next/dynamic";
 import { DragDropContext } from 'react-beautiful-dnd';
+import Avatar from '@mui/material/Avatar';
+import AvatarGroup from '@mui/material/AvatarGroup';
+import { deepOrange } from '@mui/material/colors';
 
-import { GET_ALL_PROJECTS, GET_ALL_TASKS, UPDATE_TASK_STATUS } from '../../routes/auth.js';
-import { PROJECTS_FETCHED_SUCCESS_MESSAGE, TASKS_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE } from '../../messages/message.js';
+import { GET_ALL_PROJECTS, GET_ALL_TASKS, UPDATE_TASK_STATUS, GET_ALL_PROJECT_MEMBERS } from '../../routes/auth.js';
+import { PROJECTS_FETCHED_SUCCESS_MESSAGE, TASKS_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE, PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
 import { Divider } from '@mui/material';
 
 
@@ -29,14 +32,44 @@ export default function Board({token}) {
   const [projects, setProjects] = useState([]);
   const [spacing, setSpacing] = useState(4);
   const [tasks, setTasks] = useState([]);
-  const [state, setState] = useState([]);
+  const [projectMembers, setProjectMembers] = useState([]);
 
   const handleProjectChange = (event) => {
     const projectId = event.target.value;
     console.log("changed project id to ", projectId);
     setSelectedProjectId(projectId);
     getAllTasks(projectId);
+    getAllProjectMembers(projectId)
   };
+
+  function stringToColor(string) {
+    let hash = 0;
+    let i;
+  
+    /* eslint-disable no-bitwise */
+    for (i = 0; i < string.length; i += 1) {
+      hash = string.charCodeAt(i) + ((hash << 5) - hash);
+    }
+  
+    let color = '#';
+  
+    for (i = 0; i < 3; i += 1) {
+      const value = (hash >> (i * 8)) & 0xff;
+      color += `00${value.toString(16)}`.slice(-2);
+    }
+    /* eslint-enable no-bitwise */
+  
+    return color;
+  }
+  
+  function stringAvatar(name) {
+    return {
+      sx: {
+        bgcolor: stringToColor(name),
+      },
+      children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
+    };
+  }
 
   const getAllTasks = async(projectId) => {
     const options = {
@@ -83,6 +116,7 @@ export default function Board({token}) {
       // console.log(error.message);
     }
   }
+
   const getAllProjects = async() => {
     // console.log(token);
     const options = {
@@ -161,7 +195,6 @@ export default function Board({token}) {
           setTasks([...reorderedTask, data.task]);
       }
       else{
-        // setRows([]);
         if(validationErrors){
           let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
           var errorMessage = '';
@@ -176,6 +209,57 @@ export default function Board({token}) {
       }
     } catch (error) {
       setError(error.message);
+    }
+  };
+
+  const getAllProjectMembers = async(projectId) => {
+    if (!projectId){
+      setProjectMembers([]);
+      return;
+    }
+    // console.log(token);
+    const options = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": localStorage.getItem('token')
+      },
+    }
+    
+    try {
+      setError('');
+      setSuccess('');
+      const response = await fetch(GET_ALL_PROJECT_MEMBERS.replace("{projectId}", projectId), options);
+      let responseJson = await response.json()
+      const {status, data} = responseJson;
+      const validationErrors = responseJson.errors
+
+      if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
+        localStorage.removeItem('token');
+        Router.push('/login');
+      }
+
+      if (status){
+        setSuccess(PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE);
+        setProjectMembers([...data.projectMember]);
+      }
+      else{
+        setProjectMembers([]);
+        if(validationErrors){
+          let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
+          var errorMessage = '';
+          validationErrorsArray.forEach(error => {
+            errorMessage += error + ', ';
+          });
+          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+        }
+        else{
+          setError(responseJson.error.message);
+        }
+      }
+    } catch (error) {
+      setError(error.message);
+      // console.log(error.message);
     }
   };
 
@@ -202,15 +286,10 @@ export default function Board({token}) {
     reorderColumnList( taskId, source, destination);
   };
   const addMoreTask = (task) => {
-    if(selectedProjectId == task.id)
+    debugger;
+    if(selectedProjectId == task.project_id)
       setTasks([...tasks, task]);
   };
-
-  const handleChange = (event) => {
-    setSpacing(Number(event.target.value));
-  };
-
-  const jsx = `<Grid container spacing={${spacing}}>`;
 
   useEffect(() => {
     if (!localStorage.getItem('token')){
@@ -230,7 +309,6 @@ export default function Board({token}) {
           </Breadcrumbs>
         </div>
       </Box>
-
       <div  style={{display: "flex"}}>
         <Box sx={{marginLeft: "auto" }} >
           <CreateTaskForm addTask={addMoreTask}/>
@@ -257,6 +335,11 @@ export default function Board({token}) {
       {error && <Alert severity="error">{error}</Alert>}
       {success && <Alert severity="success">{success}</Alert>}
       <Divider mt={4}/>
+      <AvatarGroup max={4}>
+        {projectMembers.map((projectMember) => (
+          <Avatar  {...stringAvatar(`${projectMember.user_id.f_name} ${projectMember.user_id.l_name}`)} key={projectMember.id} />
+        ))}
+      </AvatarGroup>
 
     <Grid sx={{ flexGrow: 1 }} container spacing={2} mt={2}>
       <Grid item xl={12}>
