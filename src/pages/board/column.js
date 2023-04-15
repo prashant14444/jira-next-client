@@ -35,37 +35,29 @@ export default function Column({value, tasks, column}) {
                     <Draggable key={task.id} draggableId={`${task.id}`} index={index}>
                     {(draggableProvided, draggableSnapshot) => (
                     <Card 
-                        key={task.id} 
-                        sx={{ 
+                      key={task.id} 
+                      sx={{ 
                             maxWidth: 345, margin:"20px", maxHeight: 300
-                        }}
-                        outlinecolor={
-                            draggableSnapshot.isDragging
-                              ? "card-border"
-                              : "transparent"
-                          }
-                          boxshadow={
-                            draggableSnapshot.isDragging
-                              ? "0 5px 10px rgba(0, 0, 0, 0.6)"
-                              : "unset"
-                          }
-                          ref={draggableProvided.innerRef}
-                          {...draggableProvided.draggableProps}
-                          {...draggableProvided.dragHandleProps}
+                      }}
+                      outlinecolor={ draggableSnapshot.isDragging ? "card-border" : "transparent"}
+                      boxshadow={draggableSnapshot.isDragging  ? "0 5px 10px rgba(0, 0, 0, 0.6)"  : "unset"}
+                      ref={draggableProvided.innerRef}
+                      {...draggableProvided.draggableProps}
+                      {...draggableProvided.dragHandleProps}
                     >
-                        <CardMedia
+                      <CardMedia
                         sx={{ height: 100 }}
                         image={"/static/images/cards/contemplative-reptile.jpg"}
                         title="green iguana"
-                        />
-                        <CardContent>
+                      />
+                      <CardContent>
                         <Typography variant="body2" color="text.secondary">{task.title}</Typography>
-                        </CardContent>
-                        <CardActions>
+                      </CardContent>
+                      <CardActions>
                         <CheckBoxIcon />
-                        <Button size="small">Share</Button>
+                        <Button size="small">RT-{index+1}</Button>
                         <Button size="small">Learn More</Button>
-                        </CardActions>
+                      </CardActions>
                     </Card>
                     )}
                     </Draggable>

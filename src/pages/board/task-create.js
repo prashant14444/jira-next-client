@@ -20,14 +20,14 @@ import Router from 'next/router.js';
 import TextField from '@mui/material/TextField';
 import Editor from "../../components/Editor.js";
 
-import {CREATE_TASK, GET_ALL_USERS, GET_ALL_PROJECTS} from '../../routes/auth.js';
+import {CREATE_TASK, GET_ALL_USERS, GET_ALL_PROJECTS, GET_ALL_PROJECT_MEMBERS} from '../../routes/auth.js';
 import {TASK_CREATED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
 import { TASK_STATUSES, TASK_TYPES, TASK_PRIORITY  } from '../../constants/task.js';
 
-export default function CreateTaskForm({addTask}) {
+export default function CreateTaskForm({addTask, selectedProjectId}) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [projectId, setProjectId] = useState('');
+  const [projectId, setProjectId] = useState(selectedProjectId);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [projects, setProjects] = useState([]);
@@ -36,6 +36,8 @@ export default function CreateTaskForm({addTask}) {
   const [taskStatus, setTaskStatus] = useState('');
   const [taskType, setTaskType] = useState('');
   const [description, setDescription] = useState('');
+  const [assignTo, setAssignTo] = useState('');
+  const [projectMembers, setProjectMembers] = useState([]);
 
   const handleChange = (e) => {
     switch(e.target.name){
@@ -59,6 +61,10 @@ export default function CreateTaskForm({addTask}) {
         setTaskType(e.target.value);
         break;
 
+      case 'assign_to':
+        setAssignTo(e.target.value);
+        break;
+
       default:
         break;
     }
@@ -67,6 +73,7 @@ export default function CreateTaskForm({addTask}) {
     setOpen(true);
     getAllProjects();
     getAllUsers();
+    getAllProjectMembers();
   };
 
   const handleClose = () => {
@@ -89,7 +96,8 @@ export default function CreateTaskForm({addTask}) {
       description, 
       priority: taskPriority, 
       type: taskType, 
-      status: taskStatus
+      status: taskStatus,
+      assigned_to: assignTo,
     };
 
     const options = {
@@ -226,12 +234,62 @@ export default function CreateTaskForm({addTask}) {
       setError(error.message);
       // console.log(error.message);
     }
-  }
+  };
+
+  const getAllProjectMembers = async() => {
+    if (!selectedProjectId){
+      setRows([]);
+      return;
+    }
+    // console.log(token);
+    const options = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": localStorage.getItem('token')
+      },
+    }
+    
+    try {
+      setError('');
+      const response = await fetch(GET_ALL_PROJECT_MEMBERS.replace("{projectId}", selectedProjectId), options);
+      let responseJson = await response.json()
+      const {status, data} = responseJson;
+      const validationErrors = responseJson.errors
+
+      if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
+        localStorage.removeItem('token');
+        Router.push('/login');
+      }
+
+      if (status){
+        setProjectMembers([...data.projectMember]);
+      }
+      else{
+        setProjectMembers([]);
+        if(validationErrors){
+          let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
+          var errorMessage = '';
+          validationErrorsArray.forEach(error => {
+            errorMessage += error + ', ';
+          });
+          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+        }
+        else{
+          setError(responseJson.error.message);
+        }
+      }
+    } catch (error) {
+      setError(error.message);
+      // console.log(error.message);
+    }
+    
+  };
 
   return (
     <>
       <Button variant="outlined" onClick={handleClickOpen}>+ Add</Button>
-      <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth="true">
+      <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth={true}>
         <DialogTitle>Create New User</DialogTitle>
         <DialogContent>
             <DialogContentText></DialogContentText>
@@ -316,6 +374,24 @@ export default function CreateTaskForm({addTask}) {
               })}
               </Select>
             </FormControl>
+            <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
+              <InputLabel id="project">Assign To</InputLabel>
+              <Select
+              required
+              labelId="assign_to"
+              id="assign_to"
+              name="assign_to"
+              value={assignTo}
+              onChange={handleChange}
+              label="Assign To"
+              >
+              <MenuItem value=""><em>None</em></MenuItem>
+              {projectMembers.map((projectMember) => {
+                return <MenuItem key={projectMember.id} value={projectMember.id}>{projectMember.user_id.f_name} {projectMember.user_id.l_name}</MenuItem>
+              })}
+              
+              </Select>
+              </FormControl>
 
             <FormControl variant="standard" sx={{ minWidth: 0, mt:4 }}>
               <Editor value={description} onChange={setDescription} />

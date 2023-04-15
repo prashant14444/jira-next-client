@@ -33,6 +33,21 @@ export default function Board({token}) {
   const [spacing, setSpacing] = useState(4);
   const [tasks, setTasks] = useState([]);
   const [projectMembers, setProjectMembers] = useState([]);
+  const [selectedAvatars, setSelectedAvatars] = useState([]);
+
+  const handleAvatarClick = (e) => {
+    let clickedAvatarId = e.target.getAttribute('data-id');
+    let currentState = selectedAvatars;
+    if (currentState.includes(clickedAvatarId)){ // if already exist then remove the avatar id from the array
+      const index = currentState.indexOf(clickedAvatarId);
+      currentState.splice(index, 1);
+      setSelectedAvatars([...currentState]);
+      getAllTasks(selectedProjectId, [...currentState]);
+    } else{
+      setSelectedAvatars([...currentState, clickedAvatarId]);
+      getAllTasks(selectedProjectId, [...currentState, clickedAvatarId]);
+    }
+  }
 
   const handleProjectChange = (event) => {
     const projectId = event.target.value;
@@ -71,7 +86,7 @@ export default function Board({token}) {
     };
   }
 
-  const getAllTasks = async(projectId) => {
+  const getAllTasks = async(projectId, selectedProjectMembers=[]) => {
     const options = {
       method: "GET",
       headers: {
@@ -81,9 +96,8 @@ export default function Board({token}) {
     }
     
     try {
-      setError('');
-      setSuccess('');
-      const response = await fetch(GET_ALL_TASKS.replace("{projectId}", projectId), options);
+      let url = GET_ALL_TASKS.replace("{projectId}", projectId).replace("{projectMembers}", JSON.stringify(selectedProjectMembers));
+      const response = await fetch(url, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
       const validationErrors = responseJson.errors
@@ -94,7 +108,6 @@ export default function Board({token}) {
       }
 
       if (status){
-        setSuccess(TASKS_FETCHED_SUCCESS_MESSAGE);
         setTasks([...data.task]);
       }
       else{
@@ -129,7 +142,6 @@ export default function Board({token}) {
     
     try {
       setError('');
-      setSuccess('');
       const response = await fetch(GET_ALL_PROJECTS, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
@@ -141,7 +153,6 @@ export default function Board({token}) {
       }
 
       if (status){
-        setSuccess(PROJECTS_FETCHED_SUCCESS_MESSAGE);
         setProjects([...data.project]);
       }
       else{
@@ -179,7 +190,8 @@ export default function Board({token}) {
     try {
       setError('');
       setSuccess('');
-      const response = await fetch(UPDATE_TASK_STATUS.replace('{taskId}', taskId).replace('{projectId}', selectedProjectId), options);
+      let url = UPDATE_TASK_STATUS.replace('{taskId}', taskId).replace('{projectId}', selectedProjectId);
+      const response = await fetch(url, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
       const validationErrors = responseJson.errors
@@ -190,7 +202,7 @@ export default function Board({token}) {
       }
 
       if (status){
-          setSuccess(TASK_UPDATED_SUCCESS_MESSAGE);
+          // setSuccess(TASK_UPDATED_SUCCESS_MESSAGE);
           let reorderedTask = tasks.filter((task) => task.id != taskId);
           setTasks([...reorderedTask, data.task]);
       }
@@ -285,8 +297,8 @@ export default function Board({token}) {
 
     reorderColumnList( taskId, source, destination);
   };
+
   const addMoreTask = (task) => {
-    debugger;
     if(selectedProjectId == task.project_id)
       setTasks([...tasks, task]);
   };
@@ -311,7 +323,7 @@ export default function Board({token}) {
       </Box>
       <div  style={{display: "flex"}}>
         <Box sx={{marginLeft: "auto" }} >
-          <CreateTaskForm addTask={addMoreTask}/>
+          <CreateTaskForm addTask={addMoreTask} selectedProjectId={selectedProjectId}/>
         </Box>
         <FormControl sx={{ml: 2,  minWidth: 220, maxWidth:350 }} size='small'>
           <InputLabel id="demo-select-small">Select Project</InputLabel>
@@ -337,7 +349,14 @@ export default function Board({token}) {
       <Divider mt={4}/>
       <AvatarGroup max={4}>
         {projectMembers.map((projectMember) => (
-          <Avatar  {...stringAvatar(`${projectMember.user_id.f_name} ${projectMember.user_id.l_name}`)} key={projectMember.id} />
+          <Avatar  
+            {...stringAvatar(`${projectMember.user_id.f_name} ${projectMember.user_id.l_name}`)} 
+            key={projectMember.id} 
+            elevation={2}
+            style={{ border: selectedAvatars.includes(projectMember.id) ? '0.2px solid darkblue' : ''}}  
+            onClick={handleAvatarClick}
+            data-id={projectMember.id}
+          />
         ))}
       </AvatarGroup>
 
