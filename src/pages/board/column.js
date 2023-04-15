@@ -7,12 +7,42 @@ import CardMedia from '@mui/material/CardMedia';
 import Button from '@mui/material/Button';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
+import Avatar from '@mui/material/Avatar';
+import AvatarGroup from '@mui/material/AvatarGroup';
 
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import { Draggable } from "react-beautiful-dnd";
 import { Droppable } from "react-beautiful-dnd";
 
 export default function Column({value, tasks, column}) {
+  function stringToColor(string) {
+    let hash = 0;
+    let i;
+  
+    /* eslint-disable no-bitwise */
+    for (i = 0; i < string.length; i += 1) {
+      hash = string.charCodeAt(i) + ((hash << 5) - hash);
+    }
+  
+    let color = '#';
+  
+    for (i = 0; i < 3; i += 1) {
+      const value = (hash >> (i * 8)) & 0xff;
+      color += `00${value.toString(16)}`.slice(-2);
+    }
+    /* eslint-enable no-bitwise */
+  
+    return color;
+  }
+  
+  function stringAvatar(name) {
+    return {
+      sx: {
+        bgcolor: stringToColor(name),
+      },
+      children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
+    };
+  }
   return <>
     <Grid key={value} item>
       <InputLabel sx={{marginBottom: "10px", color: "primary.main"}}>{value.toUpperCase()}</InputLabel>
@@ -22,7 +52,7 @@ export default function Column({value, tasks, column}) {
               sx={{
               minHeight: "40vh",
               maxHeight: "auto",
-              width: "35vh",
+              width: "30vh",
               borderRadius: 1,
               border: 1,
               borderColor: 'primary.main',
@@ -57,6 +87,14 @@ export default function Column({value, tasks, column}) {
                         <CheckBoxIcon />
                         <Button size="small">RT-{index+1}</Button>
                         <Button size="small">Learn More</Button>
+                        {task.assigned_to &&
+                          <AvatarGroup max={4}>
+                            <Avatar  
+                              {...stringAvatar(`${task.assigned_to.user_id.f_name} ${task.assigned_to.user_id.l_name}`)} 
+                              key={task.id} 
+                              />
+                          </AvatarGroup>
+                        }
                       </CardActions>
                     </Card>
                     )}

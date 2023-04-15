@@ -15,7 +15,7 @@ import dynamic from "next/dynamic";
 import { DragDropContext } from 'react-beautiful-dnd';
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
-import { deepOrange } from '@mui/material/colors';
+import toast, { Toaster } from 'react-hot-toast';
 
 import { GET_ALL_PROJECTS, GET_ALL_TASKS, UPDATE_TASK_STATUS, GET_ALL_PROJECT_MEMBERS } from '../../routes/auth.js';
 import { PROJECTS_FETCHED_SUCCESS_MESSAGE, TASKS_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE, PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
@@ -153,6 +153,7 @@ export default function Board({token}) {
       }
 
       if (status){
+        toast.success(PROJECTS_FETCHED_SUCCESS_MESSAGE);
         setProjects([...data.project]);
       }
       else{
@@ -252,7 +253,7 @@ export default function Board({token}) {
       }
 
       if (status){
-        setSuccess(PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE);
+        toast.success(PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE);
         setProjectMembers([...data.projectMember]);
       }
       else{
@@ -313,6 +314,7 @@ export default function Board({token}) {
 
   return (
     <>
+      <Toaster />
       <Box sx={{ flexGrow: 1 }}>
         <div role="presentation">
           <Breadcrumbs aria-label="breadcrumb">
@@ -360,20 +362,19 @@ export default function Board({token}) {
         ))}
       </AvatarGroup>
 
-    <Grid sx={{ flexGrow: 1 }} container spacing={2} mt={2}>
-      <Grid item xl={12}>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Grid container justifyContent="center" spacing={spacing}>
-            {["todo", "in-progress", "qa", "done"].map((value) =>{
-              const column = value;
-              let columnTasks = tasks.filter(task => task.status == column);
-              return <Column value={value} key={column} column={column} tasks={columnTasks} />;
-            } )}
-          </Grid>
-        </DragDropContext>
+      <Grid sx={{ flexGrow: 1 }} container spacing={2} mt={2}>
+        <Grid item xl={12}>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Grid container justifyContent="center" spacing={spacing}>
+              {["todo", "in-progress", "qa", "done"].map((value) =>{
+                const column = value;
+                let columnTasks = tasks.filter(task => task.status == column);
+                return <Column value={value} key={column} column={column} tasks={columnTasks} />;
+              } )}
+            </Grid>
+          </DragDropContext>
+        </Grid>
       </Grid>
-      
-    </Grid>
     </>
   );
 }

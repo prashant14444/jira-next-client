@@ -19,6 +19,7 @@ import FormControl from '@mui/material/FormControl';
 import Router from 'next/router.js';
 import TextField from '@mui/material/TextField';
 import Editor from "../../components/Editor.js";
+import toast, { Toaster } from 'react-hot-toast';
 
 import {CREATE_TASK, GET_ALL_USERS, GET_ALL_PROJECTS, GET_ALL_PROJECT_MEMBERS} from '../../routes/auth.js';
 import {TASK_CREATED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
@@ -28,8 +29,6 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [projectId, setProjectId] = useState(selectedProjectId);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [projects, setProjects] = useState([]);
   const [taskPriority, setTaskPriority] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
@@ -78,14 +77,14 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
 
   const handleClose = () => {
     setOpen(false);
-    setSuccess('');
-    setError('');
     setProjectId('');
     setTaskStatus('');
     setTaskPriority('');
     setTaskTitle('');
     setProjects([]);
     setTaskType('');
+    setDescription('');
+    setAssignTo('');
   };
 
   const handleSubmit = async(e) => {
@@ -108,17 +107,14 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
         "x-access-token": localStorage.getItem('token')
       },
     }
-    
-    try {
-      setError('');
-      setSuccess('');
 
+    try {
       const response = await fetch(CREATE_TASK, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
       const validationErrors = responseJson.errors
       if (status){
-        setSuccess(TASK_CREATED_SUCCESS_MESSAGE);
+        toast.success(TASK_CREATED_SUCCESS_MESSAGE);
         addTask(data.task);
         handleClose();
       }
@@ -129,21 +125,19 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
-      console.log(error);
+      toast.error(error.message);
     }
     setLoading(false);
   };
 
   const getAllProjects = async() => {
-    // console.log(token);
     const options = {
       method: "GET",
       headers: {
@@ -151,10 +145,8 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
         "x-access-token": localStorage.getItem('token')
       },
     }
-    
+    const toastId = toast.loading('Waiting...');
     try {
-      setError('');
-      setSuccess('');
       const response = await fetch(GET_ALL_PROJECTS, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
@@ -166,7 +158,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
       }
 
       if (status){
-        setSuccess(PROJECTS_FETCHED_SUCCESS_MESSAGE);
+        toast.success(PROJECTS_FETCHED_SUCCESS_MESSAGE);
         setProjects([...data.project]);
       }
       else{
@@ -177,16 +169,17 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message);
       // console.log(error.message);
-    } 
+    }
+    toast.dismiss(toastId);
   };
 
   const getAllUsers = async() => {
@@ -200,8 +193,6 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
     }
     
     try {
-      setError('');
-      setSuccess('');
       const response = await fetch(GET_ALL_USERS, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
@@ -213,7 +204,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
       }
 
       if (status){
-        setSuccess(USERS_FETCHED_SUCCESS_MESSAGE);
+        toast.success(USERS_FETCHED_SUCCESS_MESSAGE);
         // setTask([...data.user]);
       }
       else{
@@ -224,21 +215,21 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message);
       // console.log(error.message);
     }
   };
 
   const getAllProjectMembers = async() => {
     if (!selectedProjectId){
-      setRows([]);
+      setProjectMembers([]);
       return;
     }
     // console.log(token);
@@ -251,7 +242,6 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
     }
     
     try {
-      setError('');
       const response = await fetch(GET_ALL_PROJECT_MEMBERS.replace("{projectId}", selectedProjectId), options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
@@ -273,14 +263,14 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message);
       // console.log(error.message);
     }
     
@@ -288,6 +278,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
 
   return (
     <>
+      <Toaster />
       <Button variant="outlined" onClick={handleClickOpen}>+ Add</Button>
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth={true}>
         <DialogTitle>Create New User</DialogTitle>
@@ -295,8 +286,6 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
             <DialogContentText></DialogContentText>
             <Divider />
             <Stack>
-            {error && <Alert severity="error">{error}</Alert>}
-            {success && <Alert severity="success">{success}</Alert>}
 
             <FormControl variant="standard" sx={{ minWidth: 120 }}>
               <InputLabel id="project">Select Project</InputLabel>
