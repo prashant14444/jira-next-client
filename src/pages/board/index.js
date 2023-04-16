@@ -9,7 +9,6 @@ import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import CreateTaskForm from './task-create.js';
 import Grid from '@mui/material/Grid';
-import Alert from '@mui/material/Alert';
 import Router from 'next/router.js';
 import dynamic from "next/dynamic";
 import { DragDropContext } from 'react-beautiful-dnd';
@@ -17,8 +16,14 @@ import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
 import toast, { Toaster } from 'react-hot-toast';
 
+import Paper from '@mui/material/Paper';
+import InputBase from '@mui/material/InputBase';
+import IconButton from '@mui/material/IconButton';
+import ClearIcon from '@mui/icons-material/Clear';
+import SearchIcon from '@mui/icons-material/Search';
+
 import { GET_ALL_PROJECTS, GET_ALL_TASKS, UPDATE_TASK_STATUS, GET_ALL_PROJECT_MEMBERS } from '../../routes/auth.js';
-import { PROJECTS_FETCHED_SUCCESS_MESSAGE, TASKS_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE, PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
+import { PROJECTS_FETCHED_SUCCESS_MESSAGE, PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
 import { Divider } from '@mui/material';
 
 
@@ -27,13 +32,23 @@ const Column = dynamic(() => import("./column.js"), { ssr: false });
 
 export default function Board({token}) {
   const [selectedProjectId, setSelectedProjectId] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [projects, setProjects] = useState([]);
   const [spacing, setSpacing] = useState(4);
   const [tasks, setTasks] = useState([]);
   const [projectMembers, setProjectMembers] = useState([]);
   const [selectedAvatars, setSelectedAvatars] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const handleSearch = (e) => {
+    let value = e.target.value;
+    setSearchTerm(value);
+    getAllTasks(selectedProjectId, selectedAvatars, value)
+  };
+
+  const handleSearchClear = (e) => {
+    setSearchTerm('');
+    getAllTasks(selectedProjectId, selectedAvatars)
+  };
 
   const handleAvatarClick = (e) => {
     let clickedAvatarId = e.target.getAttribute('data-id');
@@ -42,19 +57,19 @@ export default function Board({token}) {
       const index = currentState.indexOf(clickedAvatarId);
       currentState.splice(index, 1);
       setSelectedAvatars([...currentState]);
-      getAllTasks(selectedProjectId, [...currentState]);
+      getAllTasks(selectedProjectId, [...currentState], searchTerm);
     } else{
       setSelectedAvatars([...currentState, clickedAvatarId]);
-      getAllTasks(selectedProjectId, [...currentState, clickedAvatarId]);
+      getAllTasks(selectedProjectId, [...currentState, clickedAvatarId], searchTerm);
     }
-  }
+  };
 
   const handleProjectChange = (event) => {
     const projectId = event.target.value;
     console.log("changed project id to ", projectId);
     setSelectedProjectId(projectId);
     getAllTasks(projectId);
-    getAllProjectMembers(projectId)
+    getAllProjectMembers(projectId, selectedAvatars, searchTerm)
   };
 
   function stringToColor(string) {
@@ -75,7 +90,7 @@ export default function Board({token}) {
     /* eslint-enable no-bitwise */
   
     return color;
-  }
+  };
   
   function stringAvatar(name) {
     return {
@@ -84,9 +99,9 @@ export default function Board({token}) {
       },
       children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
     };
-  }
+  };
 
-  const getAllTasks = async(projectId, selectedProjectMembers=[]) => {
+  const getAllTasks = async(projectId, selectedProjectMembers=[], searchTerm='') => {
     const options = {
       method: "GET",
       headers: {
@@ -96,7 +111,11 @@ export default function Board({token}) {
     }
     
     try {
-      let url = GET_ALL_TASKS.replace("{projectId}", projectId).replace("{projectMembers}", JSON.stringify(selectedProjectMembers));
+      let url = GET_ALL_TASKS
+        .replace("{projectId}", projectId)
+        .replace("{projectMembers}", JSON.stringify(selectedProjectMembers))
+        .replace("{searchTerm}", searchTerm);
+
       const response = await fetch(url, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
@@ -118,17 +137,17 @@ export default function Board({token}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message);
       // console.log(error.message);
     }
-  }
+  };
 
   const getAllProjects = async() => {
     // console.log(token);
@@ -141,7 +160,6 @@ export default function Board({token}) {
     }
     
     try {
-      setError('');
       const response = await fetch(GET_ALL_PROJECTS, options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
@@ -164,17 +182,17 @@ export default function Board({token}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message);
       // console.log(error.message);
     }
-  }
+  };
 
   const updateTaskStatus = async(taskId, status) => {
     let token = localStorage.getItem('token');
@@ -189,8 +207,6 @@ export default function Board({token}) {
     }
      
     try {
-      setError('');
-      setSuccess('');
       let url = UPDATE_TASK_STATUS.replace('{taskId}', taskId).replace('{projectId}', selectedProjectId);
       const response = await fetch(url, options);
       let responseJson = await response.json()
@@ -214,14 +230,14 @@ export default function Board({token}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message);
     }
   };
 
@@ -240,8 +256,6 @@ export default function Board({token}) {
     }
     
     try {
-      setError('');
-      setSuccess('');
       const response = await fetch(GET_ALL_PROJECT_MEMBERS.replace("{projectId}", projectId), options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
@@ -264,14 +278,14 @@ export default function Board({token}) {
           validationErrorsArray.forEach(error => {
             errorMessage += error + ', ';
           });
-          setError(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
         }
         else{
-          setError(responseJson.error.message);
+          toast.error(responseJson.error.message);
         }
       }
     } catch (error) {
-      setError(error.message);
+      toast.error(error.message);
       // console.log(error.message);
     }
   };
@@ -346,9 +360,8 @@ export default function Board({token}) {
         </FormControl>
       </div>
       <div style={{margin: "20px"}}></div>
-      {error && <Alert severity="error">{error}</Alert>}
-      {success && <Alert severity="success">{success}</Alert>}
       <Divider mt={4}/>
+
       <AvatarGroup max={4}>
         {projectMembers.map((projectMember) => (
           <Avatar  
@@ -361,6 +374,24 @@ export default function Board({token}) {
           />
         ))}
       </AvatarGroup>
+
+      <Paper
+      component="form"
+      sx={{ p: '2px 4px ', display: 'flex', alignItems: 'center', width: 400, marginTop:"0px" }}
+      >
+        <InputBase
+          sx={{ ml: 1, flex: 1 }}
+          placeholder="Search for a card here.."
+          inputProps={{ 'aria-label': 'Search for a card here..' }}
+          value={searchTerm}
+          onChange={handleSearch}
+          />
+        {searchTerm ? 
+          <IconButton onClick={handleSearchClear} type="button" sx={{ p: '10px' }} aria-label="search"><ClearIcon /></IconButton>
+          :
+          <IconButton type="button" sx={{ p: '10px' }} aria-label="search"><SearchIcon /></IconButton>
+        }
+      </Paper>
 
       <Grid sx={{ flexGrow: 1 }} container spacing={2} mt={2}>
         <Grid item xl={12}>

@@ -88,12 +88,14 @@ export default function Column({value, tasks, column}) {
                         <Button size="small">RT-{index+1}</Button>
                         <Button size="small">Learn More</Button>
                         {task.assigned_to &&
+                        <Button size="small" sx={{position: "right"}}>
                           <AvatarGroup max={4}>
                             <Avatar  
                               {...stringAvatar(`${task.assigned_to.user_id.f_name} ${task.assigned_to.user_id.l_name}`)} 
                               key={task.id} 
                               />
                           </AvatarGroup>
+                          </Button>
                         }
                       </CardActions>
                     </Card>
