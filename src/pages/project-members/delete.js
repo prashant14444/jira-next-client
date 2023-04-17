@@ -41,6 +41,7 @@ export default function DeleteMember({currentModalState, updateParentDeleteModal
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 

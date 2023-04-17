@@ -138,6 +138,7 @@ export default function CreateUserForm({addMember}) {
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 
@@ -185,6 +186,7 @@ export default function CreateUserForm({addMember}) {
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 

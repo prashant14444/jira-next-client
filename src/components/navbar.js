@@ -71,6 +71,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 export default function Navbar({ children, token }) {
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('defaultProjectId');
     Router.push('/login');
   }
   const theme = useTheme();

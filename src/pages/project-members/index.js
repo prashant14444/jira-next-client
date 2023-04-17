@@ -264,6 +264,7 @@ export default function EnhancedTable({token}) {
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 
@@ -315,6 +316,7 @@ export default function EnhancedTable({token}) {
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 
@@ -346,9 +348,12 @@ export default function EnhancedTable({token}) {
   useEffect(() => {
     if (!localStorage.getItem('token')){
       localStorage.removeItem('token')
-      Router.push('/login');
+        localStorage.removeItem('defaultProjectId');
+        Router.push('/login');
     }
     getAllProjects(localStorage.getItem('token'));
+    setSelectedProjectId(localStorage.getItem('defaultProjectId') ? localStorage.getItem('defaultProjectId') : '');
+    getAllProjectMembers(localStorage.getItem('defaultProjectId') ? localStorage.getItem('defaultProjectId') : '');
   }, []);
 
   const handleRequestSort = (event, property) => {

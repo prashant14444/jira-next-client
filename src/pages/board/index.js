@@ -69,7 +69,8 @@ export default function Board({token}) {
     console.log("changed project id to ", projectId);
     setSelectedProjectId(projectId);
     getAllTasks(projectId);
-    getAllProjectMembers(projectId, selectedAvatars, searchTerm)
+    getAllProjectMembers(projectId, selectedAvatars, searchTerm);
+    localStorage.setItem("defaultProjectId", projectId);
   };
 
   function stringToColor(string) {
@@ -123,6 +124,7 @@ export default function Board({token}) {
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 
@@ -167,6 +169,7 @@ export default function Board({token}) {
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 
@@ -216,6 +219,7 @@ export default function Board({token}) {
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         Router.push('/login');
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
       }
 
       if (status){
@@ -263,6 +267,7 @@ export default function Board({token}) {
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
         Router.push('/login');
       }
 
@@ -321,9 +326,12 @@ export default function Board({token}) {
   useEffect(() => {
     if (!localStorage.getItem('token')){
       localStorage.removeItem('token')
+      localStorage.removeItem('defaultProjectId');
       Router.push('/login');
     }
     getAllProjects(localStorage.getItem('token'));
+    setSelectedProjectId(localStorage.getItem('defaultProjectId') ? localStorage.getItem('defaultProjectId') : '');
+    getAllTasks(localStorage.getItem('defaultProjectId') ? localStorage.getItem('defaultProjectId') : '');
   }, []);
 
   return (

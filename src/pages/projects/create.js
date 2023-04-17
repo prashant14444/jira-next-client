@@ -90,8 +90,9 @@ export default function CreateProjectForm({addProject}) {
       const validationErrors = responseJson.errors
 
       if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
-        Router.push('/login');
         localStorage.removeItem('token');
+        localStorage.removeItem('defaultProjectId');
+        Router.push('/login');
       }
 
       if (status){
