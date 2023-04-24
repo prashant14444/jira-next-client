@@ -237,6 +237,7 @@ export default function EnhancedTable({token}) {
     console.log("changed project id to ", projectId);
     setSelectedProjectId(projectId);
     getAllProjectMembers(projectId);
+    localStorage.setItem("defaultProjectId", projectId);
   };
 
   const handleDeleteModalState = (e) => {

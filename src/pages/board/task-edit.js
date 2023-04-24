@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect, useState, forwardRef} from 'react';
 
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -7,11 +7,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
-import { Divider } from '@mui/material';
+import { Divider, Input } from '@mui/material';
 
 import Stack from '@mui/material/Stack';
 import LoadingButton from '@mui/lab/LoadingButton';
-import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -21,14 +20,13 @@ import TextField from '@mui/material/TextField';
 import Editor from "../../components/Editor.js";
 import toast, { Toaster } from 'react-hot-toast';
 
-import {CREATE_TASK, GET_ALL_USERS, GET_ALL_PROJECTS, GET_ALL_PROJECT_MEMBERS} from '../../routes/auth.js';
-import {TASK_CREATED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
+import {EDIT_TASK, GET_TASK_BY_ID, GET_ALL_USERS, GET_ALL_PROJECTS, GET_ALL_PROJECT_MEMBERS} from '../../routes/auth.js';
+import {TASK_CREATED_SUCCESS_MESSAGE, TASK_FETCHED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
 import { TASK_STATUSES, TASK_TYPES, TASK_PRIORITY  } from '../../constants/task.js';
 
-export default function CreateTaskForm({addTask, selectedProjectId}) {
+const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultProjectId}) => {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [projectId, setProjectId] = useState(selectedProjectId);
   const [projects, setProjects] = useState([]);
   const [taskPriority, setTaskPriority] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
@@ -38,12 +36,9 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
   const [assignTo, setAssignTo] = useState('');
   const [projectMembers, setProjectMembers] = useState([]);
 
+  console.log("defaultprojectId", defaultProjectId);
   const handleChange = (e) => {
-    switch(e.target.name){
-      case 'project_id':
-        setProjectId(e.target.value);
-        break;
-    
+    switch(e.target.name){    
       case 'status':
         setTaskStatus(e.target.value);
         break;
@@ -67,17 +62,18 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
       default:
         break;
     }
-  }
+  };
+
   const handleClickOpen = () => {
     setOpen(true);
     getAllProjects();
     getAllUsers();
     getAllProjectMembers();
+    getTaskById(clickedTaskId);
   };
 
   const handleClose = () => {
     setOpen(false);
-    setProjectId('');
     setTaskStatus('');
     setTaskPriority('');
     setTaskTitle('');
@@ -85,6 +81,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
     setTaskType('');
     setDescription('');
     setAssignTo('');
+    updateClickedTaskId('');
   };
 
   const handleSubmit = async(e) => {
@@ -137,6 +134,58 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
     setLoading(false);
   };
 
+  const getTaskById = async(taskId) => {
+    if(!taskId) return;
+    
+    // console.log(token);
+    const options = {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-token": localStorage.getItem('token')
+        },
+    }
+      
+    try {
+        const response = await fetch(GET_TASK_BY_ID.replace("{task_id}", taskId).replace("{projectId}", defaultProjectId), options);
+        let responseJson = await response.json()
+        const {status, data} = responseJson;
+        const validationErrors = responseJson.errors
+  
+        if(response.status == 401){ // if unauthorised then redirect back to the login page and remove token
+          localStorage.removeItem('token');
+          localStorage.removeItem('defaultProjectId');
+          Router.push('/login');
+        }
+  
+        if (status){
+          toast.success(TASK_FETCHED_SUCCESS_MESSAGE);
+          setTaskPriority(data.task.priority);
+          setTaskStatus(data.task.status);
+          setTaskType(data.task.type);
+          setTaskTitle(data.task.title);
+          setDescription(data.task.description);
+          setAssignTo(data.task.assigned_to);
+        }
+        else{
+          // setTask([]);
+          if(validationErrors){
+            let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
+            var errorMessage = '';
+            validationErrorsArray.forEach(error => {
+              errorMessage += error + ', ';
+            });
+            toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+          }
+          else{
+            toast.error(responseJson.error.message);
+          }
+        }
+    } catch (error) {
+        toast.error(error.message);
+    }
+  };
+
   const getAllProjects = async() => {
     const options = {
       method: "GET",
@@ -159,7 +208,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
       }
 
       if (status){
-        toast.success(PROJECTS_FETCHED_SUCCESS_MESSAGE);
+        // toast.success(PROJECTS_FETCHED_SUCCESS_MESSAGE);
         setProjects([...data.project]);
       }
       else{
@@ -206,7 +255,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
       }
 
       if (status){
-        toast.success(USERS_FETCHED_SUCCESS_MESSAGE);
+        // toast.success(USERS_FETCHED_SUCCESS_MESSAGE);
         // setTask([...data.user]);
       }
       else{
@@ -230,7 +279,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
   };
 
   const getAllProjectMembers = async() => {
-    if (!selectedProjectId){
+    if (!defaultProjectId){
       setProjectMembers([]);
       return;
     }
@@ -244,7 +293,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
     }
     
     try {
-      const response = await fetch(GET_ALL_PROJECT_MEMBERS.replace("{projectId}", selectedProjectId), options);
+      const response = await fetch(GET_ALL_PROJECT_MEMBERS.replace("{projectId}", defaultProjectId), options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
       const validationErrors = responseJson.errors
@@ -279,12 +328,18 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
     
   };
 
+  useEffect(() => {
+    if(clickedTaskId){
+      handleClickOpen();
+      getTaskById(clickedTaskId);
+    }
+  },[clickedTaskId]);
+
   return (
     <>
       <Toaster />
-      <Button variant="outlined" onClick={handleClickOpen}>+ Add</Button>
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth={true}>
-        <DialogTitle>Create New Task</DialogTitle>
+        <DialogTitle>Edit Task</DialogTitle>
         <DialogContent>
             <DialogContentText></DialogContentText>
             <Divider />
@@ -297,7 +352,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
               labelId="project"
               id="project"
               name="project_id"
-              value={projectId}
+              value={defaultProjectId}
               onChange={handleChange}
               label="Select Project *"
               >
@@ -327,7 +382,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
               </Select>
             </FormControl>
 
-            <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
+            <FormControl variant="standard" sx={{ minWidth: 120, mt:4, mb:4 }}>
               <InputLabel id="task-type">Task Type</InputLabel>
               <Select
               required
@@ -345,9 +400,7 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
               </Select>
             </FormControl>
 
-            <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
-              <TextField defaultValue={taskTitle} name="taskTitle" label="Title" variant="standard" onChange={handleChange} />
-            </FormControl>
+              <TextField mt={4} mb={4} value={taskTitle} name="taskTitle" label="Title" variant="standard" onChange={handleChange} />
 
             <FormControl variant="standard" sx={{ minWidth: 120, mt:4 }}>
               <InputLabel id="priority">Priority</InputLabel>
@@ -406,4 +459,6 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
       </Dialog>
     </>
   );
-}
+};
+
+export default EditTaskForm;

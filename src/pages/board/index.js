@@ -7,7 +7,6 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
-import CreateTaskForm from './task-create.js';
 import Grid from '@mui/material/Grid';
 import Router from 'next/router.js';
 import dynamic from "next/dynamic";
@@ -15,7 +14,7 @@ import { DragDropContext } from 'react-beautiful-dnd';
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
 import toast, { Toaster } from 'react-hot-toast';
-
+import { Divider } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
@@ -24,16 +23,13 @@ import SearchIcon from '@mui/icons-material/Search';
 
 import { GET_ALL_PROJECTS, GET_ALL_TASKS, UPDATE_TASK_STATUS, GET_ALL_PROJECT_MEMBERS } from '../../routes/auth.js';
 import { PROJECTS_FETCHED_SUCCESS_MESSAGE, PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
-import { Divider } from '@mui/material';
-
-
+import CreateTaskForm from './task-create.js';
 
 const Column = dynamic(() => import("./column.js"), { ssr: false });
 
-export default function Board({token}) {
+export default function Board() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [projects, setProjects] = useState([]);
-  const [spacing, setSpacing] = useState(4);
   const [tasks, setTasks] = useState([]);
   const [projectMembers, setProjectMembers] = useState([]);
   const [selectedAvatars, setSelectedAvatars] = useState([]);
@@ -103,6 +99,8 @@ export default function Board({token}) {
   };
 
   const getAllTasks = async(projectId, selectedProjectMembers=[], searchTerm='') => {
+    if(!projectId) return;
+
     const options = {
       method: "GET",
       headers: {
@@ -329,9 +327,12 @@ export default function Board({token}) {
       localStorage.removeItem('defaultProjectId');
       Router.push('/login');
     }
+
+    const projectId = localStorage.getItem('defaultProjectId');
+
     getAllProjects(localStorage.getItem('token'));
-    setSelectedProjectId(localStorage.getItem('defaultProjectId') ? localStorage.getItem('defaultProjectId') : '');
-    getAllTasks(localStorage.getItem('defaultProjectId') ? localStorage.getItem('defaultProjectId') : '');
+    setSelectedProjectId(projectId ? projectId : '');
+    getAllTasks(projectId ? projectId : '');
   }, []);
 
   return (
@@ -404,11 +405,11 @@ export default function Board({token}) {
       <Grid sx={{ flexGrow: 1 }} container spacing={2} mt={2}>
         <Grid item xl={12}>
           <DragDropContext onDragEnd={onDragEnd}>
-            <Grid container justifyContent="center" spacing={spacing}>
+            <Grid container justifyContent="center" spacing={4}>
               {["todo", "in-progress", "qa", "done"].map((value) =>{
                 const column = value;
                 let columnTasks = tasks.filter(task => task.status == column);
-                return <Column value={value} key={column} column={column} tasks={columnTasks} />;
+                return <Column value={value} key={column} column={column} tasks={columnTasks} projectId={selectedProjectId} />;
               } )}
             </Grid>
           </DragDropContext>

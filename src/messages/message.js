@@ -12,3 +12,4 @@ export const PROJECT_MEMBER_DELETED_SUCCESS_MESSAGE = "Project Member deleted su
 export const TASKS_FETCHED_SUCCESS_MESSAGE = "Tasks rendered successfully";
 export const TASK_UPDATED_SUCCESS_MESSAGE = "Task Status updated successfully";
 export const TASK_CREATED_SUCCESS_MESSAGE = "Task created Successfully";
+export const TASK_FETCHED_SUCCESS_MESSAGE = "Task fetched successfully";

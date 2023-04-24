@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Card from '@mui/material/Card';
@@ -14,7 +15,12 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import { Draggable } from "react-beautiful-dnd";
 import { Droppable } from "react-beautiful-dnd";
 
-export default function Column({value, tasks, column}) {
+import EditTaskForm from './task-edit.js';
+
+export default function Column({value, tasks, column, projectId}) {
+  const [clickedTaskId, setClickedTaskId] = useState('');
+  
+
   function stringToColor(string) {
     let hash = 0;
     let i;
@@ -33,7 +39,7 @@ export default function Column({value, tasks, column}) {
     /* eslint-enable no-bitwise */
   
     return color;
-  }
+  };
   
   function stringAvatar(name) {
     return {
@@ -42,9 +48,37 @@ export default function Column({value, tasks, column}) {
       },
       children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
     };
-  }
+  };
+
+  const updateClickedTaskId = () => {
+    debugger;
+  };
+
+  const updateCurrentClickedCard = (e) => {
+    debugger;
+  };
+
+  
+  const handleTaskCardClick = (e) => {
+    const value = e.target.getAttribute('data-id');
+    setClickedTaskId(value);
+    console.log(value);
+  };
+
+  const updateAlreadyAddedTask = (task) => {
+    console.log("need to update the task array state", task);
+  };
   return <>
     <Grid key={value} item>
+      
+      <EditTaskForm 
+      updateTask={updateAlreadyAddedTask}
+      clickedTaskId={clickedTaskId}
+      updateClickedTaskId={(taskId) => {setClickedTaskId(taskId)}}
+      defaultProjectId={projectId}
+      /> 
+    
+
       <InputLabel sx={{marginBottom: "10px", color: "primary.main"}}>{value.toUpperCase()}</InputLabel>
       <Droppable droppableId={column}>
         {(droppableProvided, droppableSnapshot) => (
@@ -65,22 +99,27 @@ export default function Column({value, tasks, column}) {
                     <Draggable key={task.id} draggableId={`${task.id}`} index={index}>
                     {(draggableProvided, draggableSnapshot) => (
                     <Card 
-                      key={task.id} 
-                      sx={{ 
-                            maxWidth: 345, margin:"20px", maxHeight: 300
-                      }}
-                      outlinecolor={ draggableSnapshot.isDragging ? "card-border" : "transparent"}
-                      boxshadow={draggableSnapshot.isDragging  ? "0 5px 10px rgba(0, 0, 0, 0.6)"  : "unset"}
-                      ref={draggableProvided.innerRef}
-                      {...draggableProvided.draggableProps}
-                      {...draggableProvided.dragHandleProps}
+                    key={task.id} 
+                    sx={{ 
+                      maxWidth: 345, margin:"20px", maxHeight: 300
+                    }}
+                    outlinecolor={ draggableSnapshot.isDragging ? "card-border" : "transparent"}
+                    boxshadow={draggableSnapshot.isDragging  ? "0 5px 10px rgba(0, 0, 0, 0.6)"  : "unset"}
+                    ref={draggableProvided.innerRef}
+                    {...draggableProvided.draggableProps}
+                    {...draggableProvided.dragHandleProps}
                     >
                       <CardMedia
+                        data-id={task.id}
+                        onClick={handleTaskCardClick}
                         sx={{ height: 100 }}
                         image={"/static/images/cards/contemplative-reptile.jpg"}
                         title="green iguana"
                       />
-                      <CardContent>
+                      <CardContent
+                        data-id={task.id}
+                        onClick={handleTaskCardClick}
+                      >
                         <Typography variant="body2" color="text.secondary">{task.title}</Typography>
                       </CardContent>
                       <CardActions>
