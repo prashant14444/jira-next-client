@@ -270,7 +270,6 @@ export default function Board() {
       }
 
       if (status){
-        toast.success(PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE);
         setProjectMembers([...data.projectMember]);
       }
       else{
@@ -321,6 +320,13 @@ export default function Board() {
       setTasks([...tasks, task]);
   };
 
+  const updateTaskState = (updatedTask) => {
+    let tempTasks = tasks.filter(task => {
+      return updatedTask._id != task._id
+    });
+    setTasks([...tempTasks, updatedTask]);
+  };
+
   useEffect(() => {
     if (!localStorage.getItem('token')){
       localStorage.removeItem('token')
@@ -333,6 +339,7 @@ export default function Board() {
     getAllProjects(localStorage.getItem('token'));
     setSelectedProjectId(projectId ? projectId : '');
     getAllTasks(projectId ? projectId : '');
+    getAllProjectMembers(projectId ? projectId : '');
   }, []);
 
   return (
@@ -371,7 +378,7 @@ export default function Board() {
       <div style={{margin: "20px"}}></div>
       <Divider mt={4}/>
 
-      <AvatarGroup max={4}>
+      <AvatarGroup max={12}>
         {projectMembers.map((projectMember) => (
           <Avatar  
             {...stringAvatar(`${projectMember.user_id.f_name} ${projectMember.user_id.l_name}`)} 
@@ -409,7 +416,7 @@ export default function Board() {
               {["todo", "in-progress", "qa", "done"].map((value) =>{
                 const column = value;
                 let columnTasks = tasks.filter(task => task.status == column);
-                return <Column value={value} key={column} column={column} tasks={columnTasks} projectId={selectedProjectId} />;
+                return <Column updateTask={updateTaskState} value={value} key={column} column={column} tasks={columnTasks} projectId={selectedProjectId} />;
               } )}
             </Grid>
           </DragDropContext>

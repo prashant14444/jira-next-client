@@ -17,7 +17,7 @@ import { Droppable } from "react-beautiful-dnd";
 
 import EditTaskForm from './task-edit.js';
 
-export default function Column({value, tasks, column, projectId}) {
+export default function Column({value, tasks, column, projectId, updateTask}) {
   const [clickedTaskId, setClickedTaskId] = useState('');
   
 
@@ -50,29 +50,17 @@ export default function Column({value, tasks, column, projectId}) {
     };
   };
 
-  const updateClickedTaskId = () => {
-    debugger;
-  };
-
-  const updateCurrentClickedCard = (e) => {
-    debugger;
-  };
-
-  
   const handleTaskCardClick = (e) => {
     const value = e.target.getAttribute('data-id');
     setClickedTaskId(value);
     console.log(value);
   };
 
-  const updateAlreadyAddedTask = (task) => {
-    console.log("need to update the task array state", task);
-  };
   return <>
     <Grid key={value} item>
       
       <EditTaskForm 
-      updateTask={updateAlreadyAddedTask}
+      updateTask={updateTask}
       clickedTaskId={clickedTaskId}
       updateClickedTaskId={(taskId) => {setClickedTaskId(taskId)}}
       defaultProjectId={projectId}

@@ -21,7 +21,7 @@ import Editor from "../../components/Editor.js";
 import toast, { Toaster } from 'react-hot-toast';
 
 import {EDIT_TASK, GET_TASK_BY_ID, GET_ALL_USERS, GET_ALL_PROJECTS, GET_ALL_PROJECT_MEMBERS} from '../../routes/auth.js';
-import {TASK_CREATED_SUCCESS_MESSAGE, TASK_FETCHED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
+import {TASK_CREATED_SUCCESS_MESSAGE, TASK_FETCHED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE} from '../../messages/message.js';
 import { TASK_STATUSES, TASK_TYPES, TASK_PRIORITY  } from '../../constants/task.js';
 
 const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultProjectId}) => {
@@ -36,7 +36,6 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
   const [assignTo, setAssignTo] = useState('');
   const [projectMembers, setProjectMembers] = useState([]);
 
-  console.log("defaultprojectId", defaultProjectId);
   const handleChange = (e) => {
     switch(e.target.name){    
       case 'status':
@@ -87,7 +86,7 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
   const handleSubmit = async(e) => {
     setLoading(true);
     let data = {
-      project_id:projectId, 
+      project_id:defaultProjectId, 
       title: taskTitle, 
       description, 
       priority: taskPriority, 
@@ -95,9 +94,9 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
       status: taskStatus,
       assigned_to: assignTo,
     };
-
+    console.log(data);
     const options = {
-      method: "POST",
+      method: "PUT",
       body: JSON.stringify(data),
       headers: {
         "Content-Type": "application/json",
@@ -106,13 +105,13 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
     }
 
     try {
-      const response = await fetch(CREATE_TASK, options);
+      const response = await fetch(EDIT_TASK.replace('{task_id}', clickedTaskId).replace('{projectId}', defaultProjectId), options);
       let responseJson = await response.json()
       const {status, data} = responseJson;
       const validationErrors = responseJson.errors
       if (status){
-        toast.success(TASK_CREATED_SUCCESS_MESSAGE);
-        addTask(data.task);
+        toast.success(TASK_UPDATED_SUCCESS_MESSAGE);
+        updateTask(data.task);
         handleClose();
       }
       else{
@@ -160,12 +159,13 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
   
         if (status){
           toast.success(TASK_FETCHED_SUCCESS_MESSAGE);
-          setTaskPriority(data.task.priority);
-          setTaskStatus(data.task.status);
-          setTaskType(data.task.type);
-          setTaskTitle(data.task.title);
-          setDescription(data.task.description);
-          setAssignTo(data.task.assigned_to);
+          const task = data.task;
+          setTaskPriority(task.priority? task.priority : '');
+          setTaskStatus(task.status? task.status : '');
+          setTaskType(task.type? task.type : '');
+          setTaskTitle(task.title? task.title : '');
+          setDescription(task.description? task.description : '');
+          setAssignTo(task.assigned_to ? task.assigned_to : '');
         }
         else{
           // setTask([]);
