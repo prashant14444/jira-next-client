@@ -23,3 +23,8 @@ export const UPDATE_TASK_STATUS = `${API_HOST_WITH_VERSION}/task/{taskId}?projec
 export const CREATE_TASK = `${API_HOST_WITH_VERSION}/task`;
 export const EDIT_TASK = `${API_HOST_WITH_VERSION}/task/{task_id}?project_id={projectId}`;
 export const GET_TASK_BY_ID = `${API_HOST_WITH_VERSION}/task/{task_id}?project_id={projectId}`;
+
+export const CREATE_COMMENT = `${API_HOST_WITH_VERSION}/comment?project_id={project_id}`;
+export const GET_ALL_COMMENTS = `${API_HOST_WITH_VERSION}/comment?task_id={task_id}&project_id={project_id}`;
+
+export const DELETE_COMMENT_BY_ID = `${API_HOST_WITH_VERSION}/comment/:id?project_id={project_id}`;

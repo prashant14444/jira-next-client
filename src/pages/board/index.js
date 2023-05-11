@@ -20,9 +20,10 @@ import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
 import ClearIcon from '@mui/icons-material/Clear';
 import SearchIcon from '@mui/icons-material/Search';
+import Button from '@mui/material/Button';
 
 import { GET_ALL_PROJECTS, GET_ALL_TASKS, UPDATE_TASK_STATUS, GET_ALL_PROJECT_MEMBERS } from '../../routes/auth.js';
-import { PROJECTS_FETCHED_SUCCESS_MESSAGE, PROJECT_MEMBERS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
+import { PROJECTS_FETCHED_SUCCESS_MESSAGE } from '../../messages/message.js';
 import CreateTaskForm from './task-create.js';
 
 const Column = dynamic(() => import("./column.js"), { ssr: false });
@@ -327,6 +328,11 @@ export default function Board() {
     setTasks([...tempTasks, updatedTask]);
   };
 
+  const handleClear = () => {
+    setSelectedAvatars([]);
+    getAllTasks(selectedProjectId, [], searchTerm);
+  };
+
   useEffect(() => {
     if (!localStorage.getItem('token')){
       localStorage.removeItem('token')
@@ -389,6 +395,10 @@ export default function Board() {
             data-id={projectMember.id}
           />
         ))}
+        {
+          selectedAvatars.length > 0 &&
+          <Button variant="text" mt={3} onClick={handleClear}>Clear All</Button>
+        }
       </AvatarGroup>
 
       <Paper

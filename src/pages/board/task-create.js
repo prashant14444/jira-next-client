@@ -1,5 +1,4 @@
 import {useState} from 'react';
-
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -11,7 +10,6 @@ import { Divider } from '@mui/material';
 
 import Stack from '@mui/material/Stack';
 import LoadingButton from '@mui/lab/LoadingButton';
-import Alert from '@mui/material/Alert';
 import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -93,11 +91,11 @@ export default function CreateTaskForm({addTask, selectedProjectId}) {
       project_id:projectId, 
       title: taskTitle, 
       description, 
-      priority: taskPriority, 
-      type: taskType, 
       status: taskStatus,
-      assigned_to: assignTo,
     };
+    taskPriority ? data['priority']= taskPriority: null; 
+    assignTo ? data['assign_to']= assignTo: null;
+    taskType ? data['type'] = taskType : null;
 
     const options = {
       method: "POST",

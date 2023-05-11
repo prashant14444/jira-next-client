@@ -19,10 +19,20 @@ import Router from 'next/router.js';
 import TextField from '@mui/material/TextField';
 import Editor from "../../components/Editor.js";
 import toast, { Toaster } from 'react-hot-toast';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Box from '@mui/material/Box';
+import TabContext from '@mui/lab/TabContext';
+import TabPanel from '@mui/lab/TabPanel';
+import SendIcon from '@mui/icons-material/Send';
+import Fab from '@mui/material/Fab';
 
-import {EDIT_TASK, GET_TASK_BY_ID, GET_ALL_USERS, GET_ALL_PROJECTS, GET_ALL_PROJECT_MEMBERS} from '../../routes/auth.js';
-import {TASK_CREATED_SUCCESS_MESSAGE, TASK_FETCHED_SUCCESS_MESSAGE, PROJECTS_FETCHED_SUCCESS_MESSAGE, USERS_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE} from '../../messages/message.js';
+import Comment from './comment.js';
+
+import {EDIT_TASK, GET_TASK_BY_ID, GET_ALL_USERS, GET_ALL_PROJECTS, GET_ALL_PROJECT_MEMBERS, CREATE_COMMENT, GET_ALL_COMMENTS} from '../../routes/auth.js';
+import {TASK_FETCHED_SUCCESS_MESSAGE, TASK_UPDATED_SUCCESS_MESSAGE, COMMENT_CREATED_SUCCESS_MESSAGE, COMMENT_FETCHED_SUCCESS_MESSAGE} from '../../messages/message.js';
 import { TASK_STATUSES, TASK_TYPES, TASK_PRIORITY  } from '../../constants/task.js';
+import DeleteComment from './delete-comment.js';
 
 const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultProjectId}) => {
   const [loading, setLoading] = useState(false);
@@ -35,6 +45,115 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
   const [description, setDescription] = useState('');
   const [assignTo, setAssignTo] = useState('');
   const [projectMembers, setProjectMembers] = useState([]);
+  const [currentTabValue, seCcurrentTabValue] = useState('1');
+  const [newComment, setNewComment] = useState('');
+  const [comments, setComments] = useState([]);
+  const [deleteCommentId, setDeleteCommentId] = useState('');
+  const [deleteModalState, setDeleteModalState] = useState(false);
+
+  const handleDeleteCommentIdUpdate = (e) => {
+    const commentId = e.target.getAttribute('data-id');
+    setDeleteCommentId(commentId);
+    setDeleteModalState(true);
+  };
+
+  const handleDeleteComment = (commentTobeDeleted) => {
+    const updatedComments = comments.filter((comment) => {
+      return comment._id != commentTobeDeleted._id;
+    });
+    setComments([...updatedComments]);
+  };
+
+  const handleCommentsTabClick = () => {
+    getComments(clickedTaskId, defaultProjectId);
+  };
+
+  const handleCommentSubmit = async() => {
+    setLoading(true);
+    let data = {
+      message: newComment.trim(),
+      task_id: clickedTaskId
+    };
+
+    const options = {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": localStorage.getItem('token')
+      },
+    }
+
+    try {
+      const response = await fetch(CREATE_COMMENT.replace('{project_id}', defaultProjectId), options);
+      let responseJson = await response.json()
+      const {status, data} = responseJson;
+      const validationErrors = responseJson.errors
+      if (status){
+        toast.success(COMMENT_CREATED_SUCCESS_MESSAGE);
+        setComments([...comments, data.comment]);
+        setNewComment('');
+      }
+      else{
+        if(validationErrors){
+          let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
+          var errorMessage = '';
+          validationErrorsArray.forEach(error => {
+            errorMessage += error + ', ';
+          });
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+        }
+        else{
+          toast.error(responseJson.error.message);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+    setLoading(false);
+  };
+
+  const getComments = async(task_id, project_id) => {
+    setLoading(true);
+    const options = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-token": localStorage.getItem('token')
+      },
+    }
+
+    try {
+      const response = await fetch(GET_ALL_COMMENTS.replace('{task_id}', task_id).replace('{project_id}', project_id), options);
+      let responseJson = await response.json()
+      const {status, data} = responseJson;
+      const validationErrors = responseJson.errors
+      if (status){
+        toast.success(COMMENT_FETCHED_SUCCESS_MESSAGE);
+        setComments(data.comment);
+      }
+      else{
+        if(validationErrors){
+          let validationErrorsArray = Object.keys(validationErrors).map((key) => validationErrors[key]);
+          var errorMessage = '';
+          validationErrorsArray.forEach(error => {
+            errorMessage += error + ', ';
+          });
+          toast.error(errorMessage.replace(/,\s*$/, "")); // replace comma before setting the error
+        }
+        else{
+          toast.error(responseJson.error.message);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+    setLoading(false);
+  };
+
+  const handleTabChange = (event, newValue) => {
+    seCcurrentTabValue(newValue);
+  };
 
   const handleChange = (e) => {
     switch(e.target.name){    
@@ -328,15 +447,21 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
     
   };
 
+  const updateDeleteModalState =(updatedValue) => {
+    setDeleteModalState(updatedValue);
+  };
+
   useEffect(() => {
     if(clickedTaskId){
       handleClickOpen();
       getTaskById(clickedTaskId);
+      getComments(clickedTaskId, defaultProjectId);
     }
   },[clickedTaskId]);
 
   return (
     <>
+      <DeleteComment currentModalState={deleteModalState} updateParentDeleteModalState={updateDeleteModalState}commentId={deleteCommentId} deleteComment={handleDeleteComment} selectedProjectId={defaultProjectId}/>
       <Toaster />
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth={true}>
         <DialogTitle>Edit Task</DialogTitle>
@@ -443,6 +568,35 @@ const EditTaskForm = ({updateTask, clickedTaskId, updateClickedTaskId, defaultPr
             </FormControl>
           
           </Stack>
+
+          <Box sx={{ width: '100%', typography: 'body1' }} mt={3}>
+            <TabContext value={currentTabValue}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs
+                  value={currentTabValue}
+                  onChange={handleTabChange}
+                  textColor="secondary"
+                  indicatorColor="secondary"
+                  aria-label="secondary tabs example"
+                >
+                  <Tab value="1" onClick={handleCommentsTabClick} label="Comments" sx={{fontSize:'18px'}}/>
+                  <Tab value="2" label="History" sx={{fontSize:'18px'}}/>
+                  <Tab value="3" label="Uploads" sx={{fontSize:'18px'}}/>
+                </Tabs>
+              </Box>
+              <TabPanel value="1">
+                {comments.map((comment) => {
+                  return <Comment deleteComment={handleDeleteCommentIdUpdate} comment={comment} key={comment._id}/>
+                })}
+                <Box sx={{ ml:2, display: 'flex', alignItems: 'center', flexWrap: 'wrap'}}>
+                  <TextField fullWidth id="newComment" name="newComment" value={newComment} placeholder='Type here..'  sx={{maxWidth: '90%'}} onChange={(e) => setNewComment(e.target.value)}/>
+                  <Fab sx={{ml: '3%'}} onClick={handleCommentSubmit}><SendIcon /></Fab>
+                </Box>
+              </TabPanel>
+              <TabPanel value="2">History</TabPanel>
+              <TabPanel value="3">Uploads</TabPanel>
+            </TabContext>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
